@@ -79,5 +79,9 @@ RUN set -x \
 RUN set -x && pip install mmcv==1.4.2 -f https://download.openmmlab.com/mmcv/dist/cu111/torch1.10/index.html
 RUN set -x && pip install mmcv-full==1.7.0 -f https://download.openmmlab.com/mmcv/dist/cu111/torch1.10/index.html
 
+#### For EasyOCR and LaTeX-OCR and other tools
+COPY tools ${PROJECT_DIR}/tools
+RUN set -x \
+    && pip install easyocr "pix2tex[gui]" pillow
 
 WORKDIR ${PROJECT_DIR}
