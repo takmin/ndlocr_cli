@@ -21,8 +21,8 @@ def draw_line(draw, line, font):
 
 def draw_shapes_from_xml(result_path, output_dir):
     # XMLファイルのパスを指定
-    directory = os.path.join(result_path, "tmpdir")
-    xml_file = os.path.join(directory, 'xml/tmpdir.sorted.xml')
+    directory = os.path.join(result_path, "ndlocr")
+    xml_file = os.path.join(directory, 'xml/ndlocr.sorted.xml')
     
     # XMLファイルをパース
     tree = ET.parse(xml_file)

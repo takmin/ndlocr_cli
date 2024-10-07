@@ -5,6 +5,7 @@ import argparse
 from PIL import Image
 from draw_result import draw_shapes_from_xml
 from read_ndlocr_xml import parse_ocr_result, convert_format
+from ..main import infer
 
 def convert_images(input_folder, output_folder, save_json):
     # 画像ファイル名一覧を取得
@@ -38,11 +39,12 @@ def convert_images(input_folder, output_folder, save_json):
         json.dump(filename_mapping, f)
     
     # NDL OCRを起動
-    proc_folder_abs = os.path.abspath(proc_folder)     # 絶対パスに変換
-    subprocess.run(['./run_ndlocr.sh', proc_folder_abs])
+    result_path = os.path.join(proc_folder, 'result')
+    infer(input_root=proc_folder, output_root=result_path, input_structure='s', save_xml=True, proc_range='2..3')
+    #proc_folder_abs = os.path.abspath(proc_folder)     # 絶対パスに変換
+    #subprocess.run(['./run_ndlocr.sh', proc_folder_abs])
 
     # 結果の描画
-    result_path = os.path.join(proc_folder, 'result')
     draw_path = os.path.join(proc_folder, 'draw')
     if(not os.path.exists(draw_path)):
         os.mkdir(draw_path)
@@ -61,7 +63,7 @@ def convert_images(input_folder, output_folder, save_json):
     
     # XMLファイルを読み込み
     if(save_json):
-        xml_path = os.path.join(result_path, 'tmpdir/xml/tmpdir.sorted.xml')
+        xml_path = os.path.join(result_path, 'ndlocr/xml/ndlocr.sorted.xml')
         ocr_page_results = parse_ocr_result(xml_path)
         ocr_page_results = convert_format(ocr_page_results)
 
