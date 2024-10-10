@@ -79,5 +79,11 @@ RUN set -x \
 RUN set -x && pip install mmcv==1.4.2 -f https://download.openmmlab.com/mmcv/dist/cu111/torch1.10/index.html
 RUN set -x && pip install mmcv-full==1.7.0 -f https://download.openmmlab.com/mmcv/dist/cu111/torch1.10/index.html
 
+##### For Wrapper #####
+COPY proc_ndlocr.py ${PROJECT_DIR}
+COPY read_ndlocr_xml.py ${PROJECT_DIR}
+COPY draw_result.py ${PROJECT_DIR}
+COPY fonts ${PROJECT_DIR}
+#####
 
 WORKDIR ${PROJECT_DIR}
