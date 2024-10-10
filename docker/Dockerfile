@@ -83,7 +83,7 @@ RUN set -x && pip install mmcv-full==1.7.0 -f https://download.openmmlab.com/mmc
 COPY proc_ndlocr.py ${PROJECT_DIR}
 COPY read_ndlocr_xml.py ${PROJECT_DIR}
 COPY draw_result.py ${PROJECT_DIR}
-COPY fonts ${PROJECT_DIR}
+COPY fonts/ ${PROJECT_DIR}/fonts/
 #####
 
 WORKDIR ${PROJECT_DIR}

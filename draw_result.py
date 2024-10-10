@@ -19,11 +19,7 @@ def draw_line(draw, line, font):
     
     draw.rectangle([x, y, x + width, y + height], outline=color)
 
-def draw_shapes_from_xml(result_path, output_dir):
-    # XMLファイルのパスを指定
-    directory = os.path.join(result_path, "tmpdir")
-    xml_file = os.path.join(directory, 'xml/tmpdir.sorted.xml')
-    
+def draw_shapes_from_xml(xml_file, img_dir, output_dir):
     # XMLファイルをパース
     tree = ET.parse(xml_file)
     root = tree.getroot()
@@ -34,7 +30,7 @@ def draw_shapes_from_xml(result_path, output_dir):
 
     for page in root.findall('PAGE'):
         image_name = page.get('IMAGENAME')
-        image_path = os.path.join(directory, "pred_img/" + image_name)
+        image_path = os.path.join(img_dir, image_name)
         
         # 画像を開く
         image = Image.open(image_path)
