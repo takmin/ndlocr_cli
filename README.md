@@ -345,3 +345,175 @@ GPU_MEM_LIMIT = 1024**3 # 1 GB memory limit
 ```
 GPU_MEM_LIMIT = (1024**3) // 2 # 500 MB memory limit
 ```
+
+## Wrapperプログラムの実行
+
+Wrapperプログラムは、NDL OCRのDockerコンテナを使用して、フォルダ内の画像に対して一括してNDL OCRによる文書解析を行います。
+
+### 構成
+Wrapperプログラムは以下の構成です。
+* /docer/run_wrapper.sh
+    * コンテナの起動、OCRの実行、コンテナの解放までを一括して行うシェルスクリプトです。
+    * 内部でproc_ndlocr.pyを呼び出します。
+* proc_ndlocr.py
+    * フォルダの中の画像ファイルを一括で読み込み、連番JPGファイルへ変換してNDL OCRで処理をし、出力結果をJSONで出力します。
+    * 内部でread_ndlocr_xml.pyを呼び出します。
+* read_ndlocr_xml.py
+    * NDL OCRの出力XMLを読み込みjson形式に変換します。
+
+### 使い方
+
+使い方は以下の通りです。
+```
+sh ./docker/run_wrapper.sh <input_dir> <output_dir>
+```
+* input_dir
+    * 画像が格納されたディレクトリ。このディレクトリ内の画像ファイル(jpg、png、bmp)が一括で処理されます。
+* output_dir
+    * NDL OCRの結果が中間処理結果も含めて格納されるディレクトリ。
+
+output_dir以下は次のようなディレクトリが作られます。
+- draw
+    - NDL OCRの描画結果が格納されるディレクトリ
+- json
+    - NDL OCRの認識結果JSONが格納されるディレクトリ
+- tmpdir
+    - NDL OCRのための中間処理結果が格納されるディレクトリ。
+
+tmpdirディレクトリの下には更に以下のディレクトリが作成されます。
+- img
+    - NDL OCRへの入力用にjpgフォーマットかつ連番ファイル名に変更された入力画像ファイル群が格納されます。
+- result
+    - ndlocrの中間処理結果および認識結果が格納されます。
+
+jsonに格納されるjsonファイルのファイル名は、input_dir下の画像ファイル名に対応します。
+例えば、"<input_dir>/画像１.png"という名前のファイルを認識した最終結果は"<output_dir>/json/画像１.json"という名前で保存されます。
+
+同様にdrawディレクトリの下の描画結果は"<output_dir>/draw/画像１.jpg"というファイル名で保存されます。
+
+また、tmpdirディレクトリの下に"filename_mapping.json"という"<input_dir>"内の画像ファイル名と、"<output_dir>/tmpdir/img"ディレクトリ内の連番画像ファイル名との対応関係を記載したjsonファイルが出力されます。
+
+
+### サブモジュールの使い方
+#### proc_ndlocr.py
+フォルダ内の画像に対して一括してNDL OCRによる文書解析を行います。
+
+1. フォルダ内の画像ファイルを読み込み
+2. 画像群をjpgファイルへ変換
+3. jpgファイルにNDL OCR用の連番ファイル名をつけて専用フォルダへ保存
+4. 連番ファイル名とオリジナルファイル名を保存しておく
+5. NDL OCRの推論関数(infer)を呼び出し、レイアウト解析および文字認識
+6. 出力されたXMLを読み込み、結果を描画
+7. 結果画像ファイル名を元のファイル名へ変換し、結果フォルダに保存
+8. XMLファイルをjsonへ変換し、対応するファイル名をつけて保存
+
+使い方は以下の通りです。
+```
+python3 proc_ndlocr.py <input_dir> <output_dir>
+```
+proc_ndlocr.pyのinput_dirとoutput_dirは、そのままrun_wrapper.shのinput_dirおよびoutput_dirに対応します。
+* input_dir
+    * 画像が格納されたディレクトリ。このディレクトリ内の画像ファイル(jpg、png、bmp)が一括で処理されます。
+* output_dir
+    * NDL OCRの結果が格納されるディレクトリ。
+
+output_dir以下は次のようなディレクトリが作られます。（proc_all.shの出力のeasyocrとlatexocrを除いたディレクトリ）
+- draw
+    - NDL OCRの描画結果が格納されるディレクトリ
+- json
+    - NDL OCRの認識結果JSONが格納されるディレクトリ
+- tmpdir
+    - NDL OCRのための中間処理結果が格納されるディレクトリ。
+
+tmpdirディレクトリの下には更に以下のディレクトリが作成されます。
+- img
+    - run_ndlocr.sh用にjpgフォーマットかつ連番ファイル名に変更された入力画像ファイル群が格納されます。
+- result
+    - ndlocrの中間処理結果および認識結果が格納されます。
+
+また、tmpdirディレクトリの下に"filename_mapping.json"という"<input_dir>"内の画像ファイル名と、"<output_dir>/ndlocr/img"ディレクトリ内の連番画像ファイル名との対応関係を記載したjsonファイルが出力されます。
+
+
+#### read_ndlocr_xml.py
+NDL OCRの出力XMLファイルを読み込み、JSONフォーマットへ変換します。proc_ndlocr.pyの中で呼び出されます。
+```
+python3 read_ndlocr_xml.py <input> <output> --convert
+```
+* input
+    * NDL OCRが出力したXMLファイルです。proc_ndlocr.pyが出力した"<output_dir>/ndlocr/result/tmpdir/xml/tmpdir.sorted.xml"を指定します。
+* output
+    * 出力するJSONファイルです。
+* --convet
+    * このオプションをつけないと、NDL OCRのXMLと同じ構造のJSONファイルを出力します。オプションを付けた場合、構造をproc_ndlocr.pyのJSONファイルと近い構造のJSONファイルを出力します。これはproc_ndlocr.pyが各画像ファイルごとに対応するJSONファイルを吐き出すのに対し、これら同一ディレクトリ内のJSONをすべて１つのJSONに束ねた構造になっています。これはproc_ndlocr.py内で処理するための中間結果として使用されます。
+
+#### JSONファイルのフォーマット
+本プログラムが出力するJSONファイルは以下のようなフォーマットとなります。
+
+```
+{
+  “width”:  1332,
+  “height”:  1776,
+  "LINES": [
+    {
+        "type": 本文,
+        "x": 20,
+        "y": 140,
+        "width": 460,
+        "height": 10,
+        "confidence": 0.9,
+        "string": "こんにちは、はろー、さようなら" 
+    }
+  ],
+  "BLOCKS": [
+    {
+        "type":  “テキスト”,
+        "x": 20,
+        "y": 20,
+        "width": 460,
+        "height": 500,
+        "confidence": 0.8,
+        "LINES": [
+           # 上記LINESと同じ構造
+         ]
+    },
+    {
+       "type":  “表組”,
+        "x": 20,
+        "y": 20,
+        "width": 460,
+        "height": 500,
+        "confidence": 0.8,
+        "LINES": [
+         ]
+    },
+    {
+       “type”:  “図版”,
+        "x": 20,
+        "y": 20,
+        "width": 460,
+        "height": 500,
+        "confidence": 0.8,
+        "LINES": [
+           #図の中の文字列
+         ]
+    },
+    {
+　　 　"type":  “数式”,
+        "x": 20,
+        "y": 20,
+        "width": 460,
+        "height": 500,
+        "confidence": 0.8,
+        "LINES": [
+           #LaTeXの数式表現文字列
+         ]
+    }
+  ]
+}  
+
+```
+このようにレイアウトのブロックを抽出して"BLOCKS"内に配列として格納し、そのブロックのカテゴリを"type"で指定しています。
+また、ブロック内に含まれる文字列は"LINES"という配列に格納されます。この"LINES"の要素も"type"属性を持ちますが、この時EasyOCRで認識された文字列には"EasyOCR"というtypeがつけられます。一方LaTeX-OCRで認識された文字列は"数式"というtypeになります。
+
+
+
